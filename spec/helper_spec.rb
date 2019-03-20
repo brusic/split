@@ -393,6 +393,44 @@ describe Split::Helper do
     end
   end
 
+  describe 'ab_fail' do
+    before(:each) do
+      @experiment_name = 'link_color'
+      @alternatives = ['blue', 'red']
+      @experiment = Split::ExperimentCatalog.find_or_create(@experiment_name, *@alternatives)
+      @alternative_name = ab_failable_test(@experiment_name, *@alternatives)
+      @previous_completion_count = Split::Alternative.new(@alternative_name, @experiment_name).completed_count
+      @previous_failed_count = Split::Alternative.new(@alternative_name, @experiment_name).failed_count
+    end
+
+    it 'should increment the failed counter' do
+      ab_fail(@experiment_name)
+      failed_count = Split::Alternative.new(@alternative_name, @experiment_name).failed_count
+      expect(failed_count).to eq(@previous_failed_count + 1)
+
+      new_completion_count = Split::Alternative.new(@alternative_name, @experiment_name).completed_count
+      expect(new_completion_count).to eq(@previous_completion_count)
+    end
+
+    it 'should not increment the failed counter when finished' do
+      ab_finished(@experiment_name)
+      failed_count = Split::Alternative.new(@alternative_name, @experiment_name).failed_count
+      expect(failed_count).to eq(@previous_failed_count)
+
+      new_completion_count = Split::Alternative.new(@alternative_name, @experiment_name).completed_count
+      expect(new_completion_count).to eq(@previous_completion_count + 1)
+    end
+
+    it 'should not increment any counter when re-entering test' do
+      alternative_name = ab_test(@experiment_name, *@alternatives)
+      failed_count = Split::Alternative.new(@alternative_name, @experiment_name).failed_count
+      expect(failed_count).to eq(@previous_failed_count)
+
+      new_completion_count = Split::Alternative.new(@alternative_name, @experiment_name).completed_count
+      expect(new_completion_count).to eq(@previous_completion_count)
+    end
+  end
+
   context "finished with config" do
     it "passes reset option" do
       Split.configuration.experiments = {

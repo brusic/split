@@ -114,4 +114,10 @@ module Split
       @options[:exclude] || @experiment.start_time.nil? || @user.max_experiments_reached?(@experiment.key)
     end
   end
+
+  class FailTrial < Trial
+    def fail(context = nil)
+      self.alternative.fail_participation
+    end
+  end
 end

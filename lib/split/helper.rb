@@ -77,6 +77,28 @@ module Split
       Split.configuration.db_failover_on_db_error.call(e)
     end
 
+    def ab_fail(metric_descriptor)
+      return if exclude_visitor? || Split.configuration.disabled?
+      metric_descriptor, goals = normalize_metric(metric_descriptor)
+      experiments = Metric.possible_experiments(metric_descriptor)
+
+      if experiments.any?
+        experiments.each do |experiment|
+          fail_experiment(experiment)
+        end
+      end
+    rescue => e
+      raise unless Split.configuration.db_failover
+      Split.configuration.db_failover_on_db_error.call(e)
+    end
+
+    def fail_experiment(experiment)
+      alternative_name = ab_user[experiment.key]
+      trial = FailTrial.new(:user => ab_user, :experiment => experiment,
+                            :alternative => alternative_name)
+      trial.fail
+    end
+
     def ab_record_extra_info(metric_descriptor, key, value = 1)
       return if exclude_visitor? || Split.configuration.disabled?
       metric_descriptor, goals = normalize_metric(metric_descriptor)
