@@ -63,6 +63,10 @@ module Split
       participant_count - all_completed_count
     end
 
+    def failed_count
+      Split.redis.hget(key, 'failed_count').to_i
+    end
+
     def set_field(goal)
       field = "completed_count"
       field += ":" + goal unless goal.nil?
@@ -81,6 +85,11 @@ module Split
     end
 
     def increment_participation
+      Split.redis.hincrby key, 'participant_count', 1
+    end
+
+    def fail_and_increment
+      Split.redis.hincrby key, 'failed_count', 1
       Split.redis.hincrby key, 'participant_count', 1
     end
 

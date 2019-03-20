@@ -10,6 +10,12 @@ describe Split::Helper do
     Split::ExperimentCatalog.find_or_create('link_color', 'blue', 'red')
   }
 
+  describe "ab_failable_test" do
+    it "should return the given alternative for an existing user failable" do
+      expect(ab_failable_test('link_color', 'blue', 'red')).to eq ab_failable_test('link_color', 'blue', 'red')
+    end
+  end
+
   describe "ab_test" do
     it "should not raise an error when passed strings for alternatives" do
       expect(lambda { ab_test('xyz', '1', '2', '3') }).not_to raise_error
@@ -295,6 +301,36 @@ describe Split::Helper do
       end).to eq({})
     end
   end
+
+  describe 'ab_finished_fail' do
+    before(:each) do
+      @experiment_name = 'link_color'
+      @alternatives = ['blue', 'red']
+      @experiment = Split::ExperimentCatalog.find_or_create(@experiment_name, *@alternatives)
+      @alternative_name = ab_failable_test(@experiment_name, *@alternatives)
+      @previous_completion_count = Split::Alternative.new(@alternative_name, @experiment_name).completed_count
+    end
+
+    it 'should increment the counter for the completed alternative' do
+      ab_finished(@experiment_name)
+      new_completion_count = Split::Alternative.new(@alternative_name, @experiment_name).completed_count
+      expect(new_completion_count).to eq(@previous_completion_count + 1)
+    end
+
+    it 'should not fail for the completed alternative' do
+      ab_finished(@experiment_name)
+      failed_count = Split::Alternative.new(@alternative_name, @experiment_name).failed_count
+      expect(failed_count).to eq(0)
+    end
+
+    it 'should increment the failure counter when re-entering test' do
+      alternative_name = ab_failable_test(@experiment_name, *@alternatives)
+      ab_finished(@experiment_name)
+      failed_count = Split::Alternative.new(@alternative_name, @experiment_name).failed_count
+      expect(failed_count).to eq(1)
+    end
+  end
+
 
   describe 'ab_finished' do
     before(:each) do

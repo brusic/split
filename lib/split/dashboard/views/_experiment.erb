@@ -49,6 +49,7 @@
       <th>Alternative Name</th>
       <th>Participants</th>
       <th>Non-finished</th>
+      <th>Failed</th>
       <th>Completed</th>
       <th>Conversion Rate</th>
       <% extra_columns.each do |column| %>
@@ -65,7 +66,7 @@
       <th>Finish</th>
     </tr>
 
-    <% total_participants = total_completed = total_unfinished = 0 %>
+    <% total_participants = total_completed = total_failed = total_unfinished = 0 %>
     <% experiment.alternatives.each do |alternative| %>
       <tr>
         <td>
@@ -80,6 +81,7 @@
         </td>
         <td><%= alternative.participant_count %></td>
         <td><%= alternative.unfinished_count %></td>
+        <td><%= alternative.failed_count %></td>
         <td><%= alternative.completed_count(goal) %></td>
         <td>
           <%= number_to_percentage(alternative.conversion_rate(goal)) %>%
@@ -134,6 +136,7 @@
 
       <% total_participants += alternative.participant_count %>
       <% total_unfinished += alternative.unfinished_count %>
+      <% total_failed += alternative.failed_count %>
       <% total_completed += alternative.completed_count(goal) %>
     <% end %>
 
@@ -141,6 +144,7 @@
       <td>Totals</td>
       <td><%= total_participants %></td>
       <td><%= total_unfinished %></td>
+      <td><%= total_failed %></td>
       <td><%= total_completed %></td>
       <td>N/A</td>
       <% extra_columns.each do |column| %>
